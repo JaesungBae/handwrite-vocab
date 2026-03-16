@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Dark mode overrides ──────────────────────────────────────────────────── */
+
+/* Surfaces */
+.dark .bg-white         { background-color: #1e293b; }
+.dark .bg-slate-50      { background-color: #0f172a; }
+.dark .bg-slate-100     { background-color: #1e293b; }
+.dark .bg-blue-50       { background-color: #172554; }
+.dark .bg-green-50      { background-color: #052e16; }
+.dark .bg-green-100     { background-color: #14532d; }
+.dark .bg-red-50        { background-color: #450a0a; }
+.dark .bg-red-100       { background-color: #7f1d1d; }
+.dark .bg-purple-50     { background-color: #3b0764; }
+
+/* Hover — backgrounds */
+.dark .hover\:bg-slate-50:hover  { background-color: #1e293b; }
+.dark .hover\:bg-slate-100:hover { background-color: #334155; }
+.dark .hover\:bg-white:hover     { background-color: #334155; }
+.dark .hover\:bg-red-50:hover    { background-color: #450a0a; }
+.dark .hover\:bg-red-100:hover   { background-color: #7f1d1d; }
+.dark .hover\:bg-green-50:hover  { background-color: #052e16; }
+.dark .hover\:bg-green-100:hover { background-color: #14532d; }
+.dark .hover\:bg-blue-50:hover   { background-color: #172554; }
+
+/* Active — backgrounds */
+.dark .active\:bg-red-100:active   { background-color: #7f1d1d; }
+.dark .active\:bg-green-100:active { background-color: #14532d; }
+
+/* Text */
+.dark .text-slate-800 { color: #f1f5f9; }
+.dark .text-slate-700 { color: #e2e8f0; }
+.dark .text-slate-600 { color: #cbd5e1; }
+.dark .text-slate-500 { color: #94a3b8; }
+
+/* Hover — text */
+.dark .hover\:text-slate-800:hover { color: #f1f5f9; }
+.dark .hover\:text-slate-600:hover { color: #cbd5e1; }
+.dark .hover\:text-slate-500:hover { color: #94a3b8; }
+
+/* Borders */
+.dark .border-slate-100 { border-color: #334155; }
+.dark .border-slate-200 { border-color: #334155; }
+.dark .border-slate-300 { border-color: #475569; }
+.dark .border-blue-200  { border-color: #1e40af; }
+.dark .border-red-200   { border-color: #991b1b; }
+.dark .border-green-200 { border-color: #166534; }
+
+/* Spinner border */
+.dark .border-t-slate-400 { border-top-color: #94a3b8; }
+
+/* Form elements */
+.dark input:not([type="range"]),
+.dark select,
+.dark textarea {
+  background-color: #1e293b;
+  color: #f1f5f9;
+  border-color: #475569;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b;
+}
