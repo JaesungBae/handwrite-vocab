@@ -1,5 +1,6 @@
 "use client";
 
+import { createWorker, Worker as TesseractWorker } from "tesseract.js";
 import Script from "next/script";
 import { useState, useRef, useCallback, useEffect } from "react";
 import DrawingCanvas, { DrawingCanvasHandle } from "@/components/DrawingCanvas";
@@ -239,7 +240,7 @@ export default function Home() {
             className={`text-lg font-semibold text-slate-800 ${screen !== "home" ? "hover:text-blue-600 transition-colors" : ""}`}
           >
             {screen !== "home" && <span className="mr-2 text-slate-400">←</span>}
-            Drawword
+            Worddraw
           </button>
           {user ? (
             <div className="flex items-center gap-3">
@@ -596,9 +597,16 @@ function FindWordsScreen({
   const canvasRef = useRef<DrawingCanvasHandle>(null);
   const scribbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingScribbleRef = useRef<string>("");
+  const tesseractWorkerRef = useRef<TesseractWorker | null>(null);
 
   useEffect(() => () => {
     if (scribbleTimerRef.current) clearTimeout(scribbleTimerRef.current);
+  }, []);
+
+  // Warm up Tesseract in the background so recognition is instant when needed
+  useEffect(() => {
+    createWorker("eng").then((w) => { tesseractWorkerRef.current = w; });
+    return () => { tesseractWorkerRef.current?.terminate(); };
   }, []);
 
   // Reset when project changes
@@ -690,15 +698,12 @@ function FindWordsScreen({
     setUploadStatus("idle");
     setUploadResult(null);
     try {
-      const imageBase64 = canvasRef.current.toBase64();
-      if (!imageBase64) throw new Error("Failed to read canvas.");
-      const ocrRes = await fetch("/api/recognize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64, language: "English" }),
-      });
-      if (!ocrRes.ok) throw new Error("Recognition failed.");
-      const { word } = await ocrRes.json();
+      const canvas = canvasRef.current.getCanvas();
+      if (!canvas) throw new Error("Failed to read canvas.");
+      const worker = tesseractWorkerRef.current ?? await createWorker("eng");
+      const result = await worker.recognize(canvas);
+      const raw = result.data.text.trim().toLowerCase();
+      const word = raw.replace(/[^a-z' -]/g, "").replace(/\s+/g, " ").trim();
       if (!word) throw new Error("Could not read the handwriting.");
       await lookupByText(word, originLanguage, meaningLanguage);
     } catch (e) {
@@ -829,7 +834,7 @@ function FindWordsScreen({
       {/* Bottom half: Canvas or Keyboard */}
       <div className="flex-[3] flex flex-col p-4 gap-3 min-h-0">
         {showKeyboard ? (
-          <div className="flex-1 flex flex-col justify-center gap-3">
+          <div className="flex-1 flex flex-col gap-3">
             <input
               ref={keyboardInputRef}
               type="text"

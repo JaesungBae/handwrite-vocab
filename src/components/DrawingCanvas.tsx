@@ -57,9 +57,11 @@ const applyCtxStyle = (ctx: CanvasRenderingContext2D) => {
 const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
   ({ onScribble }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const isDrawingRef = useRef(false);
     const hasDrawnRef = useRef(false);
+    const isPenRef = useRef(false);
     const [showPlaceholder, setShowPlaceholder] = useState(true);
 
     useEffect(() => {
@@ -76,10 +78,16 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
       applyCtxStyle(ctx);
     }, []);
 
-    // Touch + mouse → draw on canvas
+    // Use pointer events for all input so we can branch on pointerType:
+    //   "pen"   → Apple Pencil → focus Scribble input, don't draw
+    //   "touch" → finger → draw on canvas
+    //   "mouse" → desktop mouse → draw on canvas
+    // Listeners on the container so they fire even when the Scribble input
+    // overlay is the topmost element under the pointer.
     useEffect(() => {
+      const container = containerRef.current;
       const canvas = canvasRef.current;
-      if (!canvas) return;
+      if (!container || !canvas) return;
 
       const getPos = (clientX: number, clientY: number) => {
         const rect = canvas.getBoundingClientRect();
@@ -106,51 +114,36 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
 
       const endDraw = () => { isDrawingRef.current = false; };
 
-      const onMouseDown = (e: MouseEvent) => { const p = getPos(e.clientX, e.clientY); startDraw(p.x, p.y); };
-      const onMouseMove = (e: MouseEvent) => { const p = getPos(e.clientX, e.clientY); continueDraw(p.x, p.y); };
-
-      const onTouchStart = (e: TouchEvent) => {
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.pointerType === "pen") {
+          isPenRef.current = true;
+          inputRef.current?.focus();
+          return;
+        }
+        isPenRef.current = false;
         e.preventDefault();
-        const p = getPos(e.touches[0].clientX, e.touches[0].clientY);
+        container.setPointerCapture(e.pointerId);
+        const p = getPos(e.clientX, e.clientY);
         startDraw(p.x, p.y);
       };
-      const onTouchMove = (e: TouchEvent) => {
-        e.preventDefault();
-        const p = getPos(e.touches[0].clientX, e.touches[0].clientY);
+
+      const onPointerMove = (e: PointerEvent) => {
+        if (isPenRef.current || e.pointerType === "pen") return;
+        const p = getPos(e.clientX, e.clientY);
         continueDraw(p.x, p.y);
       };
 
-      canvas.addEventListener("mousedown", onMouseDown);
-      canvas.addEventListener("mousemove", onMouseMove);
-      canvas.addEventListener("mouseup", endDraw);
-      canvas.addEventListener("mouseleave", endDraw);
-      canvas.addEventListener("touchstart", onTouchStart, { passive: false });
-      canvas.addEventListener("touchmove", onTouchMove, { passive: false });
-      canvas.addEventListener("touchend", endDraw);
+      container.addEventListener("pointerdown", onPointerDown);
+      container.addEventListener("pointermove", onPointerMove);
+      container.addEventListener("pointerup", endDraw);
+      container.addEventListener("pointercancel", endDraw);
 
       return () => {
-        canvas.removeEventListener("mousedown", onMouseDown);
-        canvas.removeEventListener("mousemove", onMouseMove);
-        canvas.removeEventListener("mouseup", endDraw);
-        canvas.removeEventListener("mouseleave", endDraw);
-        canvas.removeEventListener("touchstart", onTouchStart);
-        canvas.removeEventListener("touchmove", onTouchMove);
-        canvas.removeEventListener("touchend", endDraw);
+        container.removeEventListener("pointerdown", onPointerDown);
+        container.removeEventListener("pointermove", onPointerMove);
+        container.removeEventListener("pointerup", endDraw);
+        container.removeEventListener("pointercancel", endDraw);
       };
-    }, []);
-
-    // Apple Pencil → focus Scribble input
-    useEffect(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const onPointerDown = (e: PointerEvent) => {
-        if (e.pointerType === "pen") {
-          e.preventDefault();
-          inputRef.current?.focus();
-        }
-      };
-      canvas.addEventListener("pointerdown", onPointerDown);
-      return () => canvas.removeEventListener("pointerdown", onPointerDown);
     }, []);
 
     useImperativeHandle(ref, () => ({
@@ -198,8 +191,8 @@ const DrawingCanvas = forwardRef<DrawingCanvasHandle, DrawingCanvasProps>(
     }));
 
     return (
-      <div className="relative w-full h-full">
-        <canvas ref={canvasRef} className="w-full h-full touch-none cursor-crosshair" />
+      <div ref={containerRef} className="relative w-full h-full touch-none">
+        <canvas ref={canvasRef} className="w-full h-full cursor-crosshair" />
 
         {/* Transparent Scribble overlay — Apple Pencil writes here via iOS Scribble */}
         <input
