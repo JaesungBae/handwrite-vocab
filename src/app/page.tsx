@@ -308,7 +308,7 @@ export default function Home() {
             className={`text-lg font-semibold text-slate-800 ${screen !== "home" ? "hover:text-blue-600 transition-colors" : ""}`}
           >
             {screen !== "home" && <span className="mr-2 text-slate-400">←</span>}
-            Worddraw
+            Drawwords
           </button>
           {user ? (
             <div className="flex items-center gap-3">

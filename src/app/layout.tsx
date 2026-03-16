@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Worddraw",
+  title: "Drawwords",
   description: "Draw words to look them up and build your vocabulary",
 };
 

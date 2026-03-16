@@ -209,7 +209,7 @@ async function renameFolder(folderId: string, newName: string, accessToken: stri
 // ── Public API ─────────────────────────────────────────────────────────────────
 
 export async function listProjects(accessToken: string): Promise<ProjectMeta[]> {
-  const rootId = await getOrCreateFolder("Worddraw", null, accessToken);
+  const rootId = await getOrCreateFolder("Drawwords", null, accessToken);
   await loadProjectsFile(rootId, accessToken);
   return sess(accessToken).projects;
 }
@@ -219,7 +219,7 @@ export async function createProject(
   description: string,
   accessToken: string
 ): Promise<ProjectMeta> {
-  const rootId = await getOrCreateFolder("Worddraw", null, accessToken);
+  const rootId = await getOrCreateFolder("Drawwords", null, accessToken);
   await loadProjectsFile(rootId, accessToken);
   const folderId = await getOrCreateFolder(name, rootId, accessToken);
 
